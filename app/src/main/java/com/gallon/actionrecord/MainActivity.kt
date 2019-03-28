@@ -1,5 +1,6 @@
 package com.gallon.actionrecord
 
+import android.annotation.SuppressLint
 import android.hardware.input.InputManager
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
@@ -13,11 +14,10 @@ import com.blankj.utilcode.util.ScreenUtils
 import com.blankj.utilcode.util.ShellUtils
 import com.blankj.utilcode.util.ToastUtils
 import com.blankj.utilcode.util.Utils
+import com.gallon.actionrecord.model.Action
 import com.gallon.actionrecord.model.ActionUnit
 import com.gallon.actionrecord.model.TouchMap
-import com.gallon.actionrecord.util.ACTION_IDLE
-import com.gallon.actionrecord.util.ACTION_RECORD
-import com.gallon.actionrecord.util.TranslateUtil
+import com.gallon.actionrecord.util.*
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
@@ -37,13 +37,23 @@ class MainActivity : AppCompatActivity() {
 
     private var state = ACTION_IDLE
 
+    private val actionList = ArrayList<Action>()
+
     private fun initListener() {
-        bt_1.setOnClickListener {
-            great()
+        bt_replay.setOnClickListener {
+            if (actionList.isEmpty()) {
+                ToastUtils.showShort("还没有录制动作")
+            } else {
+                Thread {
+                    run {
+                        play(actionList.last())
+                    }
+                }.start()
+            }
         }
         bt_record.setOnClickListener {
             state = ACTION_RECORD
-            bt_1.visibility = View.GONE
+            bt_replay.visibility = View.GONE
             bt_record.visibility = View.GONE
         }
         val unitList = ArrayList<ActionUnit>()
@@ -80,22 +90,22 @@ class MainActivity : AppCompatActivity() {
                     }
                     unitList.add(unit)
                     if (unitList.count { it.action == MotionEvent.ACTION_DOWN } != 1) {
-                        ToastUtils.showLong("该动作录制失败，请重试")
+                        ToastUtils.showShort("该动作录制失败，请重试")
                         tv_action.text = ""
                     } else {
-                        ToastUtils.showLong("该动作录制成功")
-                        TranslateUtil.restoreActionTime(unitList)
+                        ToastUtils.showShort("该动作录制成功")
+                        actionList.add(Action(unitList.clone() as MutableList<ActionUnit>, actionList.size))
                         tv_action.text = unitList.joinToString(",")
                     }
                     unitList.clear()
                     state = ACTION_IDLE
-                    bt_1.visibility = View.VISIBLE
+                    bt_replay.visibility = View.VISIBLE
                     bt_record.visibility = View.VISIBLE
                 }
                 MotionEvent.ACTION_CANCEL -> {
                     unitList.clear()
                     state = ACTION_IDLE
-                    bt_1.visibility = View.VISIBLE
+                    bt_replay.visibility = View.VISIBLE
                     bt_record.visibility = View.VISIBLE
                 }
             }
@@ -108,7 +118,6 @@ class MainActivity : AppCompatActivity() {
             override fun run() {
 //                randomPx()
 //                randomSwipe()
-                ShellUtils.execCmd("am start --user 0 com.tencent.mm/.ui.LauncherUI", false)
             }
         }.start()
     }
@@ -125,6 +134,7 @@ class MainActivity : AppCompatActivity() {
         ShellUtils.execCmd("input tap $x $y", false)
     }
 
+    @SuppressLint("NewApi")
     private fun randomSwipe() {
         try {
             val inputManager = InputManager::class.java.getMethod("getInstance").invoke(null) as InputManager
@@ -138,12 +148,6 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            val DEFAULT_SIZE = 1.0f
-            val DEFAULT_META_STATE = 0
-            val DEFAULT_PRECISION_X = 1.0f
-            val DEFAULT_PRECISION_Y = 1.0f
-            val PRESSURE = 1.0f
-            val DEFAULT_EDGE_FLAGS = 0
             val now = SystemClock.uptimeMillis()
 
             val index = (Math.random() * TouchMap.X.size).toInt()
@@ -173,6 +177,30 @@ class MainActivity : AppCompatActivity() {
             injectInputEventMethod.invoke(inputManager, eventUp, 2)
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+
+    }
+
+    @SuppressLint("NewApi")
+    private fun play(action: Action) {
+        TranslateUtil.refreshActionTime(action.actionUnitList)
+        val inputManager = InputManager::class.java.getMethod("getInstance").invoke(null) as InputManager
+        val injectInputEventMethod = InputManager::class.java.getMethod("injectInputEvent", InputEvent::class.java, Int::class.javaPrimitiveType)
+
+        var deviceId = 0
+        for (id in InputDevice.getDeviceIds()) {
+            if (InputDevice.getDevice(id).supportsSource(InputDevice.SOURCE_TOUCHSCREEN)) {
+                deviceId = id
+                break
+            }
+        }
+
+        for (actionUnit in action.actionUnitList) {
+            println("do1: " + actionUnit.action + " now: " + actionUnit.actionTime)
+            val motionEvent = MotionEvent.obtain(actionUnit.actionTime, actionUnit.actionTime, actionUnit.action, actionUnit.rawX, actionUnit.rawY, PRESSURE, DEFAULT_SIZE,
+                    DEFAULT_META_STATE, DEFAULT_PRECISION_X, DEFAULT_PRECISION_Y, deviceId, DEFAULT_EDGE_FLAGS)
+            motionEvent.source = InputDevice.SOURCE_TOUCHSCREEN
+            injectInputEventMethod.invoke(inputManager, motionEvent, 2)
         }
 
     }
