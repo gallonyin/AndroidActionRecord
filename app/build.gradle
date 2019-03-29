@@ -35,4 +35,5 @@ dependencies {
     compile 'com.yanzhenjie.nohttp:okhttp:1.1.10'
     compile 'com.google.code.gson:gson:2.8.1'
     compile 'com.blankj:utilcode:1.9.0'
+    compile 'com.android.support:recyclerview-v7:26.1.0'
 }

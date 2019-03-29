@@ -17,12 +17,13 @@ import com.blankj.utilcode.util.Utils
 import com.gallon.actionrecord.model.Action
 import com.gallon.actionrecord.model.ActionUnit
 import com.gallon.actionrecord.model.TouchMap
+import com.gallon.actionrecord.ui.view.ReplayView
 import com.gallon.actionrecord.util.*
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
 
-    val TAG = "Main2Activity"
+    val TAG = "MainActivity"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,6 +32,9 @@ class MainActivity : AppCompatActivity() {
         Utils.init(this.application)
 
         initListener()
+
+//        val view = ReplayView(this)
+//        ll_container.addView(view)
     }
 
     private var actionTime = 0L
@@ -55,10 +59,12 @@ class MainActivity : AppCompatActivity() {
             state = ACTION_RECORD
             bt_replay.visibility = View.GONE
             bt_record.visibility = View.GONE
+            replay_view.clearDraw()
         }
         val unitList = ArrayList<ActionUnit>()
-        ll_bg.setOnTouchListener { v, event ->
+        replay_view.setOnTouchListener { v, event ->
             if (state == ACTION_IDLE) return@setOnTouchListener false
+            replay_view.refreshView(event)
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
                     println("down")
@@ -95,12 +101,13 @@ class MainActivity : AppCompatActivity() {
                     } else {
                         ToastUtils.showShort("该动作录制成功")
                         actionList.add(Action(unitList.clone() as MutableList<ActionUnit>, actionList.size))
-                        tv_action.text = unitList.joinToString(",")
+//                        tv_action.text = unitList.joinToString(",")
+                        state = ACTION_IDLE
+                        replay_view.clearDraw()
+                        bt_replay.visibility = View.VISIBLE
+                        bt_record.visibility = View.VISIBLE
+                        unitList.clear()
                     }
-                    unitList.clear()
-                    state = ACTION_IDLE
-                    bt_replay.visibility = View.VISIBLE
-                    bt_record.visibility = View.VISIBLE
                 }
                 MotionEvent.ACTION_CANCEL -> {
                     unitList.clear()
@@ -114,8 +121,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun great() {
-        object : Thread() {
-            override fun run() {
+        Thread {
+            run {
 //                randomPx()
 //                randomSwipe()
             }
@@ -203,5 +210,6 @@ class MainActivity : AppCompatActivity() {
             injectInputEventMethod.invoke(inputManager, motionEvent, 2)
         }
 
+//        replay_view.clearDraw()
     }
 }
