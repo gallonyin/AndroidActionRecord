@@ -1,23 +1,22 @@
 package com.gallon.actionrecord
 
-import android.annotation.SuppressLint
-import android.hardware.input.InputManager
+import android.app.SearchManager
+import android.content.Intent
+import android.content.res.Configuration
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
-import android.os.SystemClock
+import android.support.v4.app.ActionBarDrawerToggle
+import android.support.v4.view.GravityCompat
 import android.util.Log
-import android.view.InputDevice
-import android.view.InputEvent
+import android.view.Menu
+import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
-import com.blankj.utilcode.util.ScreenUtils
-import com.blankj.utilcode.util.ShellUtils
+import android.widget.Toast
 import com.blankj.utilcode.util.ToastUtils
-import com.blankj.utilcode.util.Utils
+import com.example.android.navigationdrawer.DrawerAdapter
 import com.gallon.actionrecord.model.Action
 import com.gallon.actionrecord.model.ActionUnit
-import com.gallon.actionrecord.model.TouchMap
-import com.gallon.actionrecord.ui.view.ReplayView
 import com.gallon.actionrecord.util.*
 import kotlinx.android.synthetic.main.activity_main.*
 
@@ -25,40 +24,82 @@ class MainActivity : AppCompatActivity() {
 
     val TAG = "MainActivity"
 
+    lateinit var mTitle: CharSequence
+    lateinit var mDrawerTitle: CharSequence
+    private val planetTitles = ArrayList<String>()
+    private lateinit var drawerToggle: ActionBarDrawerToggle
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        Utils.init(this.application)
+        mTitle = title
+        mDrawerTitle = title
 
         initListener()
 
-//        val view = ReplayView(this)
-//        ll_container.addView(view)
-    }
+        // set a custom shadow that overlays the main content when the drawer opens
+        drawer_layout.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START)
+        // improve performance by indicating the list if fixed size.
+        left_drawer.setHasFixedSize(true)
 
-    private var actionTime = 0L
+        // set up the drawer's list view with items and click listener
+        left_drawer.adapter = DrawerAdapter(planetTitles, object : DrawerAdapter.OnItemClickListener {
+            override fun onClick(view: View, position: Int) {
+                selectItem(position)
+            }
+        })
+        // enable ActionBar app icon to behave as action to toggle nav drawer
+        supportActionBar!!.setDisplayHomeAsUpEnabled(true)
+        supportActionBar!!.setHomeButtonEnabled(true)
+
+        // ActionBarDrawerToggle ties together the the proper interactions
+        // between the sliding drawer and the action bar app icon
+        drawerToggle = object : ActionBarDrawerToggle(
+                this, /* host Activity */
+                drawer_layout, /* DrawerLayout object */
+                R.drawable.ic_drawer, /* nav drawer image to replace 'Up' caret */
+                R.string.drawer_open, /* "open drawer" description for accessibility */
+                R.string.drawer_close  /* "close drawer" description for accessibility */
+        ) {
+            override fun onDrawerClosed(view: View) {
+                supportActionBar!!.title = mTitle
+                invalidateOptionsMenu() // creates call to onPrepareOptionsMenu()
+            }
+
+            override fun onDrawerOpened(drawerView: View) {
+                supportActionBar!!.title = mDrawerTitle
+                invalidateOptionsMenu() // creates call to onPrepareOptionsMenu()
+            }
+        }
+        drawer_layout.setDrawerListener(drawerToggle)
+    }
 
     private var state = ACTION_IDLE
 
     private val actionList = ArrayList<Action>()
 
     private fun initListener() {
-        bt_replay.setOnClickListener {
+        bt_replay.setOnClickListener { //回放最后
+            Log.e(TAG, "actionList : $actionList")
             if (actionList.isEmpty()) {
                 ToastUtils.showShort("还没有录制动作")
             } else {
+                replay_view.clearDraw()
                 Thread {
                     run {
-                        play(actionList.last())
+                        replay_view.setEnable(true)
+                        ActionHelper.play(actionList.last())
+                        replay_view.setEnable(false)
                     }
                 }.start()
             }
         }
-        bt_record.setOnClickListener {
+        bt_record.setOnClickListener { //录制
             state = ACTION_RECORD
             bt_replay.visibility = View.GONE
             bt_record.visibility = View.GONE
+            replay_view.setEnable(true)
             replay_view.clearDraw()
         }
         val unitList = ArrayList<ActionUnit>()
@@ -97,119 +138,100 @@ class MainActivity : AppCompatActivity() {
                     unitList.add(unit)
                     if (unitList.count { it.action == MotionEvent.ACTION_DOWN } != 1) {
                         ToastUtils.showShort("该动作录制失败，请重试")
-                        tv_action.text = ""
                     } else {
                         ToastUtils.showShort("该动作录制成功")
                         actionList.add(Action(unitList.clone() as MutableList<ActionUnit>, actionList.size))
-//                        tv_action.text = unitList.joinToString(",")
+                        planetTitles.add("动作${actionList.size}: tap/swipe")
+                        left_drawer.adapter.notifyItemInserted(planetTitles.size)
                         state = ACTION_IDLE
                         replay_view.clearDraw()
                         bt_replay.visibility = View.VISIBLE
                         bt_record.visibility = View.VISIBLE
+                        replay_view.setEnable(false)
                         unitList.clear()
                     }
                 }
                 MotionEvent.ACTION_CANCEL -> {
-                    unitList.clear()
                     state = ACTION_IDLE
                     bt_replay.visibility = View.VISIBLE
                     bt_record.visibility = View.VISIBLE
+                    replay_view.setEnable(false)
+                    unitList.clear()
                 }
             }
             return@setOnTouchListener true
         }
     }
 
-    private fun great() {
+    override fun setTitle(title: CharSequence) {
+        mTitle = title
+        supportActionBar!!.title = mTitle
+    }
+
+    private fun selectItem(position: Int) {
+        Log.d(TAG, "selectItem: $position")
+        fragmentManager.beginTransaction().run {
+//            replace(R.id.content_frame, PlanetFragment.newInstance(position))
+//            commit()
+        }
+        title = planetTitles[position]
+        drawer_layout.closeDrawer(left_drawer)
+
+        replay_view.clearDraw()
         Thread {
             run {
-//                randomPx()
-//                randomSwipe()
+                Thread.sleep(1000)
+                replay_view.setEnable(true)
+                ActionHelper.play(actionList[position])
+                replay_view.setEnable(false)
             }
         }.start()
     }
 
-    private fun randomPx() {
-        val screenWidth = ScreenUtils.getScreenWidth()
-        val screenHeight = ScreenUtils.getScreenHeight()
-        val x: Float
-        val y: Float
-        val mainRandom = Math.random()
-        x = (Math.random() * (screenWidth - 50) + 25).toFloat()
-        y = (Math.random() * (screenHeight - 50) + 25).toFloat()
-        Log.e(TAG, "commandResult : ints: $x $y")
-        ShellUtils.execCmd("input tap $x $y", false)
-    }
+//    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+//        menuInflater.inflate(R.menu.navigation_drawer, menu)
+//        return true
+//    }
 
-    @SuppressLint("NewApi")
-    private fun randomSwipe() {
-        try {
-            val inputManager = InputManager::class.java.getMethod("getInstance").invoke(null) as InputManager
-            val injectInputEventMethod = InputManager::class.java.getMethod("injectInputEvent", InputEvent::class.java, Int::class.javaPrimitiveType)
+    /**
+     * Called whenever we call [invalidateOptionsMenu].
+     * If the nav drawer is open, hide action items related to the content view.
+     */
+//    override fun onPrepareOptionsMenu(menu: Menu) =
+//            super.onPrepareOptionsMenu(menu.apply {
+//                findItem(R.id.action_websearch).isVisible = !drawerLayout.isDrawerOpen(drawerList)
+//            })
 
-            var deviceId = 0
-            for (id in InputDevice.getDeviceIds()) {
-                if (InputDevice.getDevice(id).supportsSource(InputDevice.SOURCE_TOUCHSCREEN)) {
-                    deviceId = id
-                    break
-                }
-            }
-
-            val now = SystemClock.uptimeMillis()
-
-            val index = (Math.random() * TouchMap.X.size).toInt()
-            Log.e(TAG, "index : " + index)
-
-            val x = TouchMap.X[index] as FloatArray
-            val y = TouchMap.Y[index] as FloatArray
-            var len = (x.size * 0.7 + x.size.toDouble() * 0.3 * Math.random()).toInt()
-            if (len > x.size) len = x.size
-            val salt = (Math.random() * 20 - 10).toFloat()
-
-            val eventDown = MotionEvent.obtain(now, now, MotionEvent.ACTION_DOWN, x[0] + salt, y[0] + salt, PRESSURE, DEFAULT_SIZE,
-                    DEFAULT_META_STATE, DEFAULT_PRECISION_X, DEFAULT_PRECISION_Y, deviceId, DEFAULT_EDGE_FLAGS)
-            eventDown.source = InputDevice.SOURCE_TOUCHSCREEN
-            injectInputEventMethod.invoke(inputManager, eventDown, 2)
-
-            for (i in 1 until len - 1) {
-                val eventMove = MotionEvent.obtain(now, now, MotionEvent.ACTION_MOVE, x[i] + salt, y[i] + salt, PRESSURE, DEFAULT_SIZE,
-                        DEFAULT_META_STATE, DEFAULT_PRECISION_X, DEFAULT_PRECISION_Y, deviceId, DEFAULT_EDGE_FLAGS)
-                eventMove.source = InputDevice.SOURCE_TOUCHSCREEN
-                injectInputEventMethod.invoke(inputManager, eventMove, 2)
-            }
-
-            val eventUp = MotionEvent.obtain(now, now, MotionEvent.ACTION_UP, x[len - 1] + salt, y[len - 1] + salt, PRESSURE, DEFAULT_SIZE,
-                    DEFAULT_META_STATE, DEFAULT_PRECISION_X, DEFAULT_PRECISION_Y, deviceId, DEFAULT_EDGE_FLAGS)
-            eventUp.source = InputDevice.SOURCE_TOUCHSCREEN
-            injectInputEventMethod.invoke(inputManager, eventUp, 2)
-        } catch (e: Exception) {
-            e.printStackTrace()
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        // The action bar home/up action should open or close the drawer.
+        // ActionBarDrawerToggle will take care of this.
+        if (drawerToggle.onOptionsItemSelected(item)) {
+            return true
         }
 
-    }
-
-    @SuppressLint("NewApi")
-    private fun play(action: Action) {
-        TranslateUtil.refreshActionTime(action.actionUnitList)
-        val inputManager = InputManager::class.java.getMethod("getInstance").invoke(null) as InputManager
-        val injectInputEventMethod = InputManager::class.java.getMethod("injectInputEvent", InputEvent::class.java, Int::class.javaPrimitiveType)
-
-        var deviceId = 0
-        for (id in InputDevice.getDeviceIds()) {
-            if (InputDevice.getDevice(id).supportsSource(InputDevice.SOURCE_TOUCHSCREEN)) {
-                deviceId = id
-                break
+        // Handle action buttons
+        return when (item.itemId) {
+            0 -> {
+                true
             }
+            else -> super.onOptionsItemSelected(item)
         }
-
-        for (actionUnit in action.actionUnitList) {
-            println("do1: " + actionUnit.action + " now: " + actionUnit.actionTime)
-            val motionEvent = MotionEvent.obtain(actionUnit.actionTime, actionUnit.actionTime, actionUnit.action, actionUnit.rawX, actionUnit.rawY, PRESSURE, DEFAULT_SIZE,
-                    DEFAULT_META_STATE, DEFAULT_PRECISION_X, DEFAULT_PRECISION_Y, deviceId, DEFAULT_EDGE_FLAGS)
-            motionEvent.source = InputDevice.SOURCE_TOUCHSCREEN
-            injectInputEventMethod.invoke(inputManager, motionEvent, 2)
-        }
-
-//        replay_view.clearDraw()
     }
+
+    /**
+     * If [ActionBarDrawerToggle] is used, it must be called in [onPostCreate] and
+     * [onConfigurationChanged].
+     */
+    override fun onPostCreate(savedInstanceState: Bundle?) {
+        super.onPostCreate(savedInstanceState)
+        // Sync the toggle state after has occurred.
+        drawerToggle.syncState()
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // Pass any configuration change to the drawer toggle.
+        drawerToggle.onConfigurationChanged(newConfig)
+    }
+
 }

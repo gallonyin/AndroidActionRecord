@@ -1,15 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/ll_bg"
+<android.support.v4.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/drawer_layout"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    tools:openDrawer="start">
 
-    <RelativeLayout
-        android:id="@+id/rl_frontend"
+    <FrameLayout
+        android:id="@+id/content_frame"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
+
+        <com.gallon.actionrecord.ui.view.ReplayView
+            android:id="@+id/replay_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
 
         <LinearLayout
             android:id="@+id/ll_container"
@@ -29,19 +35,21 @@
                 android:layout_height="wrap_content"
                 android:text="录制下一动作"/>
 
-            <TextView
-                android:id="@+id/tv_action"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text=""/>
-
-            <com.gallon.actionrecord.ui.view.ReplayView
-                android:id="@+id/replay_view"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent" />
-
         </LinearLayout>
 
-    </RelativeLayout>
+    </FrameLayout>
 
-</LinearLayout>
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/left_drawer"
+        android:scrollbars="vertical"
+        android:layout_width="240dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:choiceMode="singleChoice"
+        android:divider="@null"
+        app:layoutManager="LinearLayoutManager"
+        />
+
+
+
+</android.support.v4.widget.DrawerLayout>

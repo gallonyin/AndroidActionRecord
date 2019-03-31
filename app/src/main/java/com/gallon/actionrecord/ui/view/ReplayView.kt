@@ -17,15 +17,16 @@ import java.util.jar.Attributes
 class ReplayView: View {
 
     private val graphics = ArrayList<PointF>()
+    private var enable = false
 
     constructor(context: Context): this(context, null)
     constructor(context: Context, attributeSet: AttributeSet?): super(context, attributeSet)
 
     private val paint = Paint().apply {
-        color = Color.BLACK
+        color = Color.BLUE
         strokeJoin = Paint.Join.ROUND
         strokeCap = Paint.Cap.ROUND
-        strokeWidth = 3F
+        strokeWidth = 2F
     }
 
     public fun clearDraw() {
@@ -38,9 +39,15 @@ class ReplayView: View {
         invalidate()
     }
 
+    public fun setEnable(boolean: Boolean) {
+        enable = boolean
+    }
+
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        graphics.add(PointF(event.x, event.y))
-        invalidate()
+        if (enable) {
+            graphics.add(PointF(event.x, event.y))
+            invalidate()
+        }
         return true
     }
 
