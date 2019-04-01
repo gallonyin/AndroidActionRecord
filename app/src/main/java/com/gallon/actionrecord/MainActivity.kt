@@ -8,10 +8,7 @@ import android.os.Bundle
 import android.support.v4.app.ActionBarDrawerToggle
 import android.support.v4.view.GravityCompat
 import android.util.Log
-import android.view.Menu
-import android.view.MenuItem
-import android.view.MotionEvent
-import android.view.View
+import android.view.*
 import android.widget.Toast
 import com.blankj.utilcode.util.ToastUtils
 import com.example.android.navigationdrawer.DrawerAdapter
@@ -232,6 +229,14 @@ class MainActivity : AppCompatActivity() {
         super.onConfigurationChanged(newConfig)
         // Pass any configuration change to the drawer toggle.
         drawerToggle.onConfigurationChanged(newConfig)
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            moveTaskToBack(true)
+            return true
+        }
+        return super.onKeyDown(keyCode, event)
     }
 
 }
