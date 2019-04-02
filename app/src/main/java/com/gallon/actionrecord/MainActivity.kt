@@ -1,6 +1,7 @@
 package com.gallon.actionrecord
 
 import android.app.SearchManager
+import android.app.Service
 import android.content.Intent
 import android.content.res.Configuration
 import android.support.v7.app.AppCompatActivity
@@ -9,11 +10,12 @@ import android.support.v4.app.ActionBarDrawerToggle
 import android.support.v4.view.GravityCompat
 import android.util.Log
 import android.view.*
-import android.widget.Toast
 import com.blankj.utilcode.util.ToastUtils
+import com.blankj.utilcode.util.Utils
 import com.example.android.navigationdrawer.DrawerAdapter
 import com.gallon.actionrecord.model.Action
 import com.gallon.actionrecord.model.ActionUnit
+import com.gallon.actionrecord.service.ReplayService
 import com.gallon.actionrecord.util.*
 import kotlinx.android.synthetic.main.activity_main.*
 
@@ -21,14 +23,17 @@ class MainActivity : AppCompatActivity() {
 
     val TAG = "MainActivity"
 
-    lateinit var mTitle: CharSequence
-    lateinit var mDrawerTitle: CharSequence
+    private lateinit var mTitle: CharSequence
+    private lateinit var mDrawerTitle: CharSequence
     private val planetTitles = ArrayList<String>()
     private lateinit var drawerToggle: ActionBarDrawerToggle
+    private var active = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        startService(Intent(Utils.getApp(), ReplayService::class.java))
 
         mTitle = title
         mDrawerTitle = title
@@ -94,8 +99,7 @@ class MainActivity : AppCompatActivity() {
         }
         bt_record.setOnClickListener { //录制
             state = ACTION_RECORD
-            bt_replay.visibility = View.GONE
-            bt_record.visibility = View.GONE
+            ll_container.visibility = View.GONE
             replay_view.setEnable(true)
             replay_view.clearDraw()
         }
@@ -142,21 +146,22 @@ class MainActivity : AppCompatActivity() {
                         left_drawer.adapter.notifyItemInserted(planetTitles.size)
                         state = ACTION_IDLE
                         replay_view.clearDraw()
-                        bt_replay.visibility = View.VISIBLE
-                        bt_record.visibility = View.VISIBLE
+                        ll_container.visibility = View.VISIBLE
                         replay_view.setEnable(false)
                         unitList.clear()
                     }
                 }
                 MotionEvent.ACTION_CANCEL -> {
                     state = ACTION_IDLE
-                    bt_replay.visibility = View.VISIBLE
-                    bt_record.visibility = View.VISIBLE
+                    ll_container.visibility = View.VISIBLE
                     replay_view.setEnable(false)
                     unitList.clear()
                 }
             }
             return@setOnTouchListener true
+        }
+        switch_test.setOnCheckedChangeListener { compoundButton, b ->
+            active = b
         }
     }
 
@@ -175,14 +180,18 @@ class MainActivity : AppCompatActivity() {
         drawer_layout.closeDrawer(left_drawer)
 
         replay_view.clearDraw()
-        Thread {
-            run {
+        if (active) {
+            startService(Intent(Utils.getApp(), ReplayService::class.java).apply {
+                putExtra("action", actionList[position])
+            })
+        } else {
+            Thread {
                 Thread.sleep(1000)
                 replay_view.setEnable(true)
                 ActionHelper.play(actionList[position])
                 replay_view.setEnable(false)
-            }
-        }.start()
+            }.start()
+        }
     }
 
 //    override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -237,6 +246,13 @@ class MainActivity : AppCompatActivity() {
             return true
         }
         return super.onKeyDown(keyCode, event)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        startService(Intent(Utils.getApp(), ReplayService::class.java).apply {
+            putExtra("type", FINISH)
+        })
     }
 
 }

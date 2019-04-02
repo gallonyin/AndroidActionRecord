@@ -35,6 +35,15 @@
                 android:layout_height="wrap_content"
                 android:text="录制下一动作"/>
 
+            <Switch
+                android:id="@+id/switch_test"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textOn="正式回放"
+                android:textOff="测试回放"
+                android:checked="false"
+                android:text="测试/使用"/>
+
         </LinearLayout>
 
     </FrameLayout>

@@ -12,3 +12,5 @@ const val DEFAULT_PRECISION_X = 1.0f
 const val DEFAULT_PRECISION_Y = 1.0f
 const val PRESSURE = 1.0f
 const val DEFAULT_EDGE_FLAGS = 0
+
+const val FINISH = "finish"
