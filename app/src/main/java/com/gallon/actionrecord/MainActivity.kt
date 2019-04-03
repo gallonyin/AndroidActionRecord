@@ -1,22 +1,27 @@
 package com.gallon.actionrecord
 
-import android.app.SearchManager
-import android.app.Service
 import android.content.Intent
 import android.content.res.Configuration
-import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Handler
 import android.support.v4.app.ActionBarDrawerToggle
 import android.support.v4.view.GravityCompat
+import android.support.v7.app.AppCompatActivity
 import android.util.Log
-import android.view.*
+import android.view.KeyEvent
+import android.view.MenuItem
+import android.view.MotionEvent
+import android.view.View
 import com.blankj.utilcode.util.ToastUtils
 import com.blankj.utilcode.util.Utils
 import com.example.android.navigationdrawer.DrawerAdapter
 import com.gallon.actionrecord.model.Action
 import com.gallon.actionrecord.model.ActionUnit
 import com.gallon.actionrecord.service.ReplayService
-import com.gallon.actionrecord.util.*
+import com.gallon.actionrecord.util.ACTION_IDLE
+import com.gallon.actionrecord.util.ACTION_RECORD
+import com.gallon.actionrecord.util.ActionHelper
+import com.gallon.actionrecord.util.FINISH
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
@@ -28,6 +33,7 @@ class MainActivity : AppCompatActivity() {
     private val planetTitles = ArrayList<String>()
     private lateinit var drawerToggle: ActionBarDrawerToggle
     private var active = false
+    private val handler = Handler()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -181,9 +187,12 @@ class MainActivity : AppCompatActivity() {
 
         replay_view.clearDraw()
         if (active) {
-            startService(Intent(Utils.getApp(), ReplayService::class.java).apply {
-                putExtra("action", actionList[position])
-            })
+            handler.postDelayed({
+                replay_view.setEnable(true)
+                startService(Intent(Utils.getApp(), ReplayService::class.java).apply {
+                    putExtra("actionList", actionList)
+                })
+            }, 2000)
         } else {
             Thread {
                 Thread.sleep(1000)

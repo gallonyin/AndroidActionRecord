@@ -4,6 +4,7 @@ import android.app.Notification
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
+import android.util.Log
 import com.gallon.actionrecord.model.Action
 import com.gallon.actionrecord.util.ActionHelper
 import com.gallon.actionrecord.util.FINISH
@@ -27,8 +28,14 @@ class ReplayService : Service() {
 
         val type = intent.getStringExtra("type")
         if (type == FINISH) stopSelf()
-        val extra = intent.getSerializableExtra("action") ?: return super.onStartCommand(intent, flags, startId)
-        Thread { ActionHelper.play(extra as Action) }.start()
+        val extra = intent.getSerializableExtra("actionList") ?: return super.onStartCommand(intent, flags, startId)
+        val actionList = extra as ArrayList<Action>
+        Thread {
+            actionList.forEach {
+                Log.e("ReplayService", "action: $it")
+                ActionHelper.play(it)
+            }
+        }.start()
         return super.onStartCommand(intent, flags, startId)
     }
 
