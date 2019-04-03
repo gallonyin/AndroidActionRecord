@@ -35,6 +35,25 @@
                 android:layout_height="wrap_content"
                 android:text="录制下一动作"/>
 
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
+
+                <EditText
+                    android:id="@+id/et_insert_delay"
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:hint="延迟(毫秒)"/>
+
+                <Button
+                    android:id="@+id/bt_insert_delay"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="插入延迟时间"/>
+
+            </LinearLayout>
+
             <Switch
                 android:id="@+id/switch_test"
                 android:layout_width="wrap_content"

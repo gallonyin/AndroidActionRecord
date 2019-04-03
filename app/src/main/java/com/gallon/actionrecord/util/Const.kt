@@ -14,3 +14,7 @@ const val PRESSURE = 1.0f
 const val DEFAULT_EDGE_FLAGS = 0
 
 const val FINISH = "finish"
+
+//ACTION.TYPE
+const val ACTION_TYPE_SWIPE = 1
+const val ACTION_TYPE_DELAY = 2

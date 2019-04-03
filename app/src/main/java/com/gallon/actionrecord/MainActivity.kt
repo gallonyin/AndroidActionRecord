@@ -18,10 +18,7 @@ import com.example.android.navigationdrawer.DrawerAdapter
 import com.gallon.actionrecord.model.Action
 import com.gallon.actionrecord.model.ActionUnit
 import com.gallon.actionrecord.service.ReplayService
-import com.gallon.actionrecord.util.ACTION_IDLE
-import com.gallon.actionrecord.util.ACTION_RECORD
-import com.gallon.actionrecord.util.ActionHelper
-import com.gallon.actionrecord.util.FINISH
+import com.gallon.actionrecord.util.*
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
@@ -147,7 +144,7 @@ class MainActivity : AppCompatActivity() {
                         ToastUtils.showShort("该动作录制失败，请重试")
                     } else {
                         ToastUtils.showShort("该动作录制成功")
-                        actionList.add(Action(unitList.clone() as MutableList<ActionUnit>, actionList.size))
+                        actionList.add(Action(ACTION_TYPE_SWIPE, unitList.clone() as MutableList<ActionUnit>, null))
                         planetTitles.add("动作${actionList.size}: tap/swipe")
                         left_drawer.adapter.notifyItemInserted(planetTitles.size)
                         state = ACTION_IDLE
@@ -165,6 +162,10 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             return@setOnTouchListener true
+        }
+        bt_insert_delay.setOnClickListener {
+            ToastUtils.showShort("该动作录制成功")
+            actionList.add(Action(ACTION_TYPE_DELAY, null, et_insert_delay.text.toString().toLong()))
         }
         switch_test.setOnCheckedChangeListener { compoundButton, b ->
             active = b

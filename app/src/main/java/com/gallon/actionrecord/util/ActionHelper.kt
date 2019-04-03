@@ -24,23 +24,27 @@ object ActionHelper {
      * NOTE: 需要在子线程执行
      */
     fun play(action: Action) {
-        TranslateUtil.refreshActionTime(action.actionUnitList)
-        val inputManager = InputManager::class.java.getMethod("getInstance").invoke(null) as InputManager
-        val injectInputEventMethod = InputManager::class.java.getMethod("injectInputEvent", InputEvent::class.java, Int::class.javaPrimitiveType)
+        if (action.type == ACTION_TYPE_SWIPE) {
+            TranslateUtil.refreshActionTime(action.actionUnitList!!)
+            val inputManager = InputManager::class.java.getMethod("getInstance").invoke(null) as InputManager
+            val injectInputEventMethod = InputManager::class.java.getMethod("injectInputEvent", InputEvent::class.java, Int::class.javaPrimitiveType)
 
-        var deviceId = 0
-        for (id in InputDevice.getDeviceIds()) {
-            if (InputDevice.getDevice(id).supportsSource(InputDevice.SOURCE_TOUCHSCREEN)) {
-                deviceId = id
-                break
+            var deviceId = 0
+            for (id in InputDevice.getDeviceIds()) {
+                if (InputDevice.getDevice(id).supportsSource(InputDevice.SOURCE_TOUCHSCREEN)) {
+                    deviceId = id
+                    break
+                }
             }
-        }
 
-        for (actionUnit in action.actionUnitList) {
-            val motionEvent = MotionEvent.obtain(actionUnit.actionTime, actionUnit.actionTime, actionUnit.action, actionUnit.rawX, actionUnit.rawY, PRESSURE, DEFAULT_SIZE,
-                    DEFAULT_META_STATE, DEFAULT_PRECISION_X, DEFAULT_PRECISION_Y, deviceId, DEFAULT_EDGE_FLAGS)
-            motionEvent.source = InputDevice.SOURCE_TOUCHSCREEN
-            injectInputEventMethod.invoke(inputManager, motionEvent, 2)
+            for (actionUnit in action.actionUnitList) {
+                val motionEvent = MotionEvent.obtain(actionUnit.actionTime, actionUnit.actionTime, actionUnit.action, actionUnit.rawX, actionUnit.rawY, PRESSURE, DEFAULT_SIZE,
+                        DEFAULT_META_STATE, DEFAULT_PRECISION_X, DEFAULT_PRECISION_Y, deviceId, DEFAULT_EDGE_FLAGS)
+                motionEvent.source = InputDevice.SOURCE_TOUCHSCREEN
+                injectInputEventMethod.invoke(inputManager, motionEvent, 2)
+            }
+        } else if (action.type == ACTION_TYPE_DELAY) {
+            //todo
         }
     }
 
