@@ -11,6 +11,9 @@ import com.blankj.utilcode.util.ScreenUtils
 import com.blankj.utilcode.util.ShellUtils
 import com.gallon.actionrecord.model.Action
 import com.gallon.actionrecord.model.TouchMap
+import java.io.BufferedReader
+import java.io.File
+import java.io.FileReader
 
 /**
  * Created by Gallon2 on 2019/3/31.
@@ -42,6 +45,47 @@ object ActionHelper {
                         DEFAULT_META_STATE, DEFAULT_PRECISION_X, DEFAULT_PRECISION_Y, deviceId, DEFAULT_EDGE_FLAGS)
                 motionEvent.source = InputDevice.SOURCE_TOUCHSCREEN
                 injectInputEventMethod.invoke(inputManager, motionEvent, 2)
+            }
+        } else if (action.type == ACTION_TYPE_DELAY) {
+            //todo
+        }
+    }
+
+    /**
+     * 重放动作 ROOT
+     * NOTE: 需要在子线程执行 需要ROOT 或运行在 VirtualXposed
+     */
+    fun playOnRoot(action: Action) {
+        val path = "/dev/input/event5"
+//        ShellUtils.execCmd("mount -o remount,rw /dev", true)
+//        val reader = BufferedReader(FileReader(File(path)))
+        val prefix = "sendevent $path "
+        if (action.type == ACTION_TYPE_SWIPE) {
+            TranslateUtil.refreshActionTime(action.actionUnitList!!)
+            action.actionUnitList.forEachIndexed { index, actionUnit ->
+                if (actionUnit.action == MotionEvent.ACTION_DOWN) {
+                    ShellUtils.execCmd(arrayOf(
+                            prefix + TranslateUtil.hexToDec("3 39 1"),
+                            prefix + TranslateUtil.hexToDec("1 14a 1"),
+                            prefix + TranslateUtil.hexToDec("3 35") + " " + actionUnit.rawX.toInt(),
+                            prefix + TranslateUtil.hexToDec("3 36") + " " + actionUnit.rawY.toInt(),
+                            prefix + TranslateUtil.hexToDec("0 0 0")
+                            ), true)
+                }
+                if (actionUnit.action == MotionEvent.ACTION_MOVE) {
+                    ShellUtils.execCmd(arrayOf(
+                            prefix + TranslateUtil.hexToDec("3 35") + " " + actionUnit.rawX.toInt(),
+                            prefix + TranslateUtil.hexToDec("3 36") + " " + actionUnit.rawY.toInt(),
+                            prefix + TranslateUtil.hexToDec("0 0 0")
+                    ), true)
+                }
+                if (actionUnit.action == MotionEvent.ACTION_UP) {
+                    ShellUtils.execCmd(arrayOf(
+                            prefix + TranslateUtil.hexToDec("3 39 ffffffff"),
+                            prefix + TranslateUtil.hexToDec("1 14a 0"),
+                            prefix + TranslateUtil.hexToDec("0 0 0")
+                    ), true)
+                }
             }
         } else if (action.type == ACTION_TYPE_DELAY) {
             //todo

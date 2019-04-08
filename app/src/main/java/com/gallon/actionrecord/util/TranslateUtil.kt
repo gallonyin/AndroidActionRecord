@@ -27,6 +27,10 @@ object TranslateUtil {
      */
     fun hexToDec(str: String?): String? {
         val strArr = str?.split(" ")
+        if (strArr?.size == 2) {
+            return BigInteger(strArr[0], 16).toString(10) + " " +
+                    BigInteger(strArr[1], 16).toString(10)
+        }
         if (strArr?.size == 3) {
             return BigInteger(strArr[0], 16).toString(10) + " " +
                     BigInteger(strArr[1], 16).toString(10) + " " +
