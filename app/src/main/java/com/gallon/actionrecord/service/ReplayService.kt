@@ -17,10 +17,6 @@ class ReplayService : Service() {
         return null
     }
 
-    override fun onCreate() {
-        super.onCreate()
-    }
-
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
         //把service设置为前台运行，避免手机系统自动杀掉改服务
         val notification = Notification()
@@ -37,10 +33,6 @@ class ReplayService : Service() {
             }
         }.start()
         return super.onStartCommand(intent, flags, startId)
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
     }
 
 }

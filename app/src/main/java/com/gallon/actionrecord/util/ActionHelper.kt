@@ -57,8 +57,6 @@ object ActionHelper {
      */
     fun playOnRoot(action: Action) {
         val path = "/dev/input/event5"
-//        ShellUtils.execCmd("mount -o remount,rw /dev", true)
-//        val reader = BufferedReader(FileReader(File(path)))
         val prefix = "sendevent $path "
         if (action.type == ACTION_TYPE_SWIPE) {
             TranslateUtil.refreshActionTime(action.actionUnitList!!)
@@ -81,7 +79,7 @@ object ActionHelper {
                 }
                 if (actionUnit.action == MotionEvent.ACTION_UP) {
                     ShellUtils.execCmd(arrayOf(
-                            prefix + TranslateUtil.hexToDec("3 39 ffffffff"),
+                            prefix + TranslateUtil.hexToDec("3 39") + " -1",
                             prefix + TranslateUtil.hexToDec("1 14a 0"),
                             prefix + TranslateUtil.hexToDec("0 0 0")
                     ), true)

@@ -20,6 +20,8 @@ import com.gallon.actionrecord.model.ActionUnit
 import com.gallon.actionrecord.service.ReplayService
 import com.gallon.actionrecord.util.*
 import kotlinx.android.synthetic.main.activity_main.*
+import java.io.BufferedReader
+import java.io.InputStreamReader
 
 class MainActivity : AppCompatActivity() {
 
@@ -85,6 +87,18 @@ class MainActivity : AppCompatActivity() {
     private val actionList = ArrayList<Action>()
 
     private fun initListener() {
+        Thread {
+            val process = Runtime.getRuntime().exec("su -c getevent")
+            val reader = BufferedReader(InputStreamReader(process.inputStream))
+            var str = reader.readLine()
+            while (str != null) {
+                val keyStr = str.split(": ")[1]
+                if (keyStr.startsWith("0003 0039") && keyStr != "0003 0039 ffffffff") {
+                    Log.e(TAG, "keyStr:$keyStr")
+                }
+                str = reader.readLine()
+            }
+        }.start()
         bt_replay.setOnClickListener { //回放最后
             Log.e(TAG, "actionList : $actionList")
             if (actionList.isEmpty()) {
