@@ -178,8 +178,12 @@ class MainActivity : AppCompatActivity() {
             return@setOnTouchListener true
         }
         bt_insert_delay.setOnClickListener {
-            ToastUtils.showShort("该动作录制成功")
-            actionList.add(Action(ACTION_TYPE_DELAY, null, et_insert_delay.text.toString().toLong()))
+            try {
+                actionList.add(Action(ACTION_TYPE_DELAY, null, et_insert_delay.text.toString().toLong()))
+                ToastUtils.showShort("该动作录制成功")
+            } catch (e: Exception) {
+                ToastUtils.showShort("参数不正确")
+            }
         }
         switch_test.setOnCheckedChangeListener { compoundButton, b ->
             active = b
